@@ -23,6 +23,7 @@ export default function PdfAssistant() {
             return;
         }
 
+        setSummarizedText('');
         setLoading(true);
 
         try {
@@ -30,10 +31,8 @@ export default function PdfAssistant() {
                 URL.revokeObjectURL(pdfUrl);
             }
 
-            //preview the pdf
             setPdfUrl(URL.createObjectURL(pdfFile));
 
-            //extract the pdf text
             const extracted = await extractTextFromFile(pdfFile);
             const summarizedText = await summarizePdfText(extracted);
             setExtractedText(extracted);
@@ -69,28 +68,21 @@ export default function PdfAssistant() {
             const res = await axios.post("http://localhost:5000/api/summarize", {
                 text
             });
-            console.log(res.data.message);
+            return res.data.summary;
         } catch (err) {
             console.error(err);
             alert("Failed to get answer from server.");
+            return "";
+        } finally {
+            setLoadingSummary(false);
         }
-        setLoadingSummary(false);
     }
 
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
-      {/* Physician / Patient Toggle */}
-      <div className="flex justify-center space-x-4 bg-white shadow rounded-2xl p-4 border border-gray-300">
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition">
-          Physician
-        </button>
-        <button className="px-4 py-2 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition">
-          Patient
-        </button>
-      </div>
+      
 
-      {/* File Upload */}
       <div className="bg-white shadow rounded-2xl p-6 border border-gray-300">
         <h2 className="text-xl font-semibold mb-4">Upload a PDF</h2>
         <input
@@ -139,9 +131,7 @@ export default function PdfAssistant() {
 
       </div>
 
-      {/* PDF Preview & AI Summary side-by-side */}
       <div className="flex flex-col md:flex-row gap-6">
-        {/* PDF Preview */}
         <div className="flex-2 bg-gray-50 shadow-inner rounded-2xl p-4 border border-gray-300">
           <h2 className="text-lg font-medium mb-2">PDF Preview</h2>
           <div className="overflow-y-scroll h-96 border rounded-lg flex items-center justify-center text-gray-400">
@@ -151,18 +141,41 @@ export default function PdfAssistant() {
           </div>
         </div>
 
-        {/* AI Summary */}
         <div className="flex-1 bg-white shadow rounded-2xl p-6 border border-gray-300">
-          <h2 className="text-lg font-semibold mb-2">AI Summary</h2>
-          <p className="text-gray-500 italic">Summary will appear here</p>
+          <h2 className="text-lg font-semibold mb-2">Summary</h2>
+          {loadingSummary ? (
+            <div className="flex items-center space-x-2 text-gray-700">
+              <svg
+                className="animate-spin h-15 w-15 text-blue-600"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                ></path>
+              </svg>
+              <span>Summarizing...</span>
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">{summarizedText || "Summary will appear here"}</p>
+          )}
         </div>
       </div>
 
-      {/* Q&A Section */}
-      <div className="bg-white shadow rounded-2xl p-6 border border-gray-300 flex flex-col h-[500px]">
-        <h2 className="text-lg font-semibold mb-4">Ask Questions</h2>
+      <div className="bg-white shadow rounded-2xl p-6 border border-gray-300 flex flex-col h-[300px]">
+        <h2 className="text-lg font-semibold mb-4">Ask questions about your document</h2>
 
-        {/* Messages placeholder */}
         <div className="flex-1 overflow-y-auto space-y-3 mb-4">
           <div className="flex justify-end">
             <div className="px-4 py-2 rounded-2xl max-w-xs bg-blue-600 text-white rounded-br-none">
@@ -176,7 +189,6 @@ export default function PdfAssistant() {
           </div>
         </div>
 
-        {/* Input box */}
         <div className="flex gap-2">
           <input
             type="text"

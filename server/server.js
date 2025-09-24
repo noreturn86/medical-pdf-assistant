@@ -2,8 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
+import path from 'path';
 
-dotenv.config();
+dotenv.config({ path: path.resolve('../.env') });
 
 const app = express();
 
@@ -22,15 +23,28 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 
 //routes
-app.post('/api/summarize', (req, res) => {
+app.post('/api/summarize', async (req, res) => {
   
-  const data = req.body;
 
-  
-  console.log(data);
+  try{
+    const { text } = req.body;
 
-  
-  res.json({ message: 'Data received successfully', receivedData: data });
+    if (!text) {
+      return res.status(400).json({ error: "Document text missing" });
+    }
+
+    const prompt = `Summarize the following medical text in a few sentences, focused on getting the most important point(s) across to an average patient, and ending with a statement about whether or not there is anything worrisome found: ${text}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    res.json({ summary: completion.choices[0].message.content });
+  } catch (err) {
+    console.error("OpenAI error:", err);
+    res.status(500).json({ error: "Failed to get response from OpenAI" });
+  }
 });
 
 
