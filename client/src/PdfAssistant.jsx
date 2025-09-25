@@ -34,9 +34,17 @@ export default function PdfAssistant() {
             setPdfUrl(URL.createObjectURL(pdfFile));
 
             const extracted = await extractTextFromFile(pdfFile);
-            const summarizedText = await summarizePdfText(extracted);
-            setExtractedText(extracted);
-            setSummarizedText(summarizedText);
+            
+            //if no text extracted, try again with ocr method
+            if (extracted.length !== 0){
+              const summary = await summarizePdfText(extracted);
+              setSummarizedText(summary);
+            } else {
+              const extractedOcr = await extractTextOcr(pdfFile);
+              const summary = await summarizePdfText(extractedOcr);
+              setSummarizedText(summary);
+            }
+
         } catch (err) {
             console.error(err);
             setError(err?.message || String(err));
@@ -58,9 +66,30 @@ export default function PdfAssistant() {
             const pageText = content.items.map(item => item.str || "").join(" ");
             allText += pageText + "\n";
         }
+        setExtractedText(allText.trim());
         return allText.trim();
     }
 
+
+    async function extractTextOcr(file) {
+
+      if (pdfUrl) {
+                URL.revokeObjectURL(pdfUrl);
+            }
+
+      setPdfUrl(URL.createObjectURL(file));
+
+
+      try {
+        const res = await axios.post("http://localhost:5000/api/extractOcr", {
+          pdfUrl
+        });
+        console.log(res.data.fullText);
+      } catch (err) {
+        console.error(err);
+            alert("Failed to get answer from server.");
+      }
+    }
 
     async function summarizePdfText(text) {
         setLoadingSummary(true);
