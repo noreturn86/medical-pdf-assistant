@@ -57,7 +57,6 @@ app.post('/api/extractOcr', upload.single("pdf"), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-
     const filePath = req.file.path;
 
     const converter = fromPath(filePath, {
@@ -87,14 +86,37 @@ app.post('/api/extractOcr', upload.single("pdf"), async (req, res) => {
         break; //no more pages
       }
     }
-
     await worker.terminate();
-
     res.json({ fullText });
-
   } catch {
     console.error("OCR error:", err);
     res.status(500).json({ error: "OCR failed to extract text" });
+  }
+});
+
+
+app.post('/api/ask', async (req, res) => {
+  try{
+    const { extractedText, userQuestion } = req.body;
+
+    if (!extractedText || !userQuestion) {
+      return res.status(400).json({ error: "Document text or question missing" });
+    }
+
+    const prompt = `answer the following question: ${userQuestion} about the following medical document text: ${extractedText}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    res.json({ answer: completion.choices[0].message.content });
+  } catch (err) {
+    console.error("OpenAI error:", err);
+    if (err.response) {
+      console.error("OpenAI API response error:", err.response.data);
+    }
+    res.status(500).json({ error: "Failed to get response from OpenAI" });
   }
 });
 

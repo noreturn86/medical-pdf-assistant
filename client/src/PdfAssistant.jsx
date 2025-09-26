@@ -13,8 +13,12 @@ export default function PdfAssistant() {
     const [loading, setLoading] = useState(false);
     const [loadingSummary, setLoadingSummary] = useState(false);
     const [loadingOcr, setLoadingOcr] = useState(false);
+    const [loadingResponse, setLoadingResponse] = useState(false);
     const [extractedText, setExtractedText] = useState('');
     const [summarizedText, setSummarizedText] = useState('');
+    const [userQuestion, setUserQuestion] = useState('');
+    const [answer, setAnswer] = useState('');
+    const [questionAsked, setQuestionAsked] = useState(false);
 
     async function handleFileChange(e) {
         const pdfFile = (e.target.files?.[0]);
@@ -23,6 +27,10 @@ export default function PdfAssistant() {
             return;
         }
         setSummarizedText('');
+        setExtractedText('');
+        setUserQuestion('');
+        setAnswer('');
+        setQuestionAsked(false);
         setLoading(true);
         try {
             if (pdfUrl) {
@@ -37,10 +45,12 @@ export default function PdfAssistant() {
             if (extracted.length !== 0){
               const summary = await summarizePdfText(extracted);
               setSummarizedText(summary);
+              setExtractedText(extracted);
             } else {
               const extractedOcr = await extractTextOcr(pdfFile);
               const summary = await summarizePdfText(extractedOcr);
               setSummarizedText(summary);
+              setExtractedText(extractedOcr);
             }
         } catch (err) {
             console.error(err);
@@ -69,6 +79,7 @@ export default function PdfAssistant() {
 
 
     async function extractTextOcr(file) {
+      setLoading(false);
       setLoadingOcr(true);
       try {
         const formData = new FormData();
@@ -87,6 +98,7 @@ export default function PdfAssistant() {
 
 
     async function summarizePdfText(text) {
+        setLoading(false);
         setLoadingSummary(true);
         try {
             const res = await axios.post("http://localhost:5000/api/summarize", {
@@ -99,6 +111,34 @@ export default function PdfAssistant() {
             return "";
         } finally {
             setLoadingSummary(false);
+        }
+    }
+
+
+    async function handleAskQuestion() {
+
+      if (questionAsked) {
+        alert("Limited to 1 question, for demonstration purposes");
+        return;
+      }
+
+      if (!userQuestion?.trim()) {
+        alert("Enter a question.");
+        return;
+      }
+      
+      setLoadingResponse(true);
+        try {
+            const res = await axios.post("http://localhost:5000/api/ask", {
+                extractedText, userQuestion
+            });
+            setAnswer(res.data.answer);
+            setQuestionAsked(true);
+        } catch (err) {
+            console.error(err);
+            alert("Failed to get answer from server.");
+        } finally {
+            setLoadingResponse(false);
         }
     }
 
@@ -228,13 +268,13 @@ export default function PdfAssistant() {
 
         <div className="flex-1 overflow-y-auto space-y-3 mb-4">
           <div className="flex justify-end">
-            <div className="px-4 py-2 rounded-2xl max-w-xs bg-blue-600 text-white rounded-br-none">
-              User message
+            <div className={`px-4 py-2 rounded-2xl max-w-xs bg-blue-600 text-white rounded-br-none ${questionAsked ? "hidden":"visible"}`}>
+              {userQuestion || "User message"}
             </div>
           </div>
           <div className="flex justify-start">
-            <div className="px-4 py-2 rounded-2xl max-w-xs bg-gray-200 text-gray-800 rounded-bl-none">
-              AI response
+            <div className="px-4 py-2 rounded-2xl max-w-m bg-gray-200 text-gray-800 rounded-bl-none">
+              {answer || "AI response"}
             </div>
           </div>
         </div>
@@ -244,14 +284,21 @@ export default function PdfAssistant() {
             type="text"
             placeholder="Type your question..."
             className="flex-1 border rounded-xl p-3 focus:ring-2 focus:ring-blue-400"
+            onChange={(e) => setUserQuestion(e.target.value)}
+            disabled={questionAsked}
           />
           <button
             className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-500 transition"
+            onClick={handleAskQuestion}
+            disabled={questionAsked}
           >
             Send
           </button>
         </div>
       </div>
+      {questionAsked && (
+        <p className="text-red-500 text-center">Limited to 1 question per document, for demonstration purposes</p>
+      )}
     </div>
   );
 }
