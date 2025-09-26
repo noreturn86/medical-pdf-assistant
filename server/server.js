@@ -103,7 +103,7 @@ app.post('/api/ask', async (req, res) => {
       return res.status(400).json({ error: "Document text or question missing" });
     }
 
-    const prompt = `answer the following question: ${userQuestion} about the following medical document text: ${extractedText}`;
+    const prompt = `answer the following question: ${userQuestion} about the following medical document text: ${extractedText}. answer concisely in plain language, as if explaining to a patient.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
