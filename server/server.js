@@ -5,6 +5,7 @@ import OpenAI from 'openai';
 import path from 'path';
 import { createWorker } from "tesseract.js";
 import { fromPath } from "pdf2pic";
+import multer from 'multer';
 
 dotenv.config({ path: path.resolve('../.env') });
 
@@ -22,6 +23,8 @@ app.use(express.json());
 
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const upload = multer({dest: "uploads/"});
 
 
 //routes
@@ -49,21 +52,21 @@ app.post('/api/summarize', async (req, res) => {
 });
 
 
-app.post('/api/extractOcr', async (req, res) => {
+app.post('/api/extractOcr', upload.single("pdf"), async (req, res) => {
   try {
-    const { pdfUrl } = req.body;
-
-    if (!pdfUrl) {
-      return res.status(400).json({ error: "No pdf url received" });
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const converter = fromPath(pdfUrl, {
-      density: 300, // DPI (higher = better OCR accuracy, slower)
+    const filePath = req.file.path;
+
+    const converter = fromPath(filePath, {
+      density: 300,
       saveFilename: "page",
       savePath: "./images",
       format: "png",
-      width: 1654,   // A4 width
-      height: 2339   // A4 height
+      width: 1654,   //A4 width
+      height: 2339   //A4 height
     });
 
     const worker = await createWorker("eng");
@@ -73,7 +76,6 @@ app.post('/api/extractOcr', async (req, res) => {
     while (true) {
       try {
         const pageImage = await converter(page);
-        console.log(`📄 Processing page ${page}...`);
 
         const {
           data: { text },
@@ -82,14 +84,13 @@ app.post('/api/extractOcr', async (req, res) => {
         fullText += `\n\n--- Page ${page} ---\n${text}`;
         page++;
       } catch (err) {
-        // Stop when there are no more pages
-        break;
+        break; //no more pages
       }
     }
 
     await worker.terminate();
 
-    res.json({fullText: fullText});
+    res.json({ fullText });
 
   } catch {
     console.error("OCR error:", err);

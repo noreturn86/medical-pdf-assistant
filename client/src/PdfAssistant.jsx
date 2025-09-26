@@ -12,20 +12,18 @@ export default function PdfAssistant() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [loadingSummary, setLoadingSummary] = useState(false);
+    const [loadingOcr, setLoadingOcr] = useState(false);
     const [extractedText, setExtractedText] = useState('');
     const [summarizedText, setSummarizedText] = useState('');
 
     async function handleFileChange(e) {
         const pdfFile = (e.target.files?.[0]);
-
         if (pdfFile && pdfFile.type !=="application/pdf"){
             setError("Please upload a valid pdf file.");
             return;
         }
-
         setSummarizedText('');
         setLoading(true);
-
         try {
             if (pdfUrl) {
                 URL.revokeObjectURL(pdfUrl);
@@ -44,7 +42,6 @@ export default function PdfAssistant() {
               const summary = await summarizePdfText(extractedOcr);
               setSummarizedText(summary);
             }
-
         } catch (err) {
             console.error(err);
             setError(err?.message || String(err));
@@ -72,24 +69,22 @@ export default function PdfAssistant() {
 
 
     async function extractTextOcr(file) {
-
-      if (pdfUrl) {
-                URL.revokeObjectURL(pdfUrl);
-            }
-
-      setPdfUrl(URL.createObjectURL(file));
-
-
+      setLoadingOcr(true);
       try {
-        const res = await axios.post("http://localhost:5000/api/extractOcr", {
-          pdfUrl
-        });
-        console.log(res.data.fullText);
+        const formData = new FormData();
+        formData.append("pdf", file);
+        
+        const res = await axios.post("http://localhost:5000/api/extractOcr", formData);
+        
+        return res.data.fullText;
       } catch (err) {
         console.error(err);
             alert("Failed to get answer from server.");
+      } finally {
+        setLoadingOcr(false);
       }
     }
+
 
     async function summarizePdfText(text) {
         setLoadingSummary(true);
@@ -112,7 +107,7 @@ export default function PdfAssistant() {
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       
 
-      <div className="bg-white shadow rounded-2xl p-6 border border-gray-300">
+      <div className="flex items-center bg-white shadow rounded-2xl p-6 gap-4 border border-gray-300">
         <h2 className="text-xl font-semibold mb-4">Upload a PDF</h2>
         <input
           type="file"
@@ -123,13 +118,13 @@ export default function PdfAssistant() {
                      file:bg-blue-50 file:text-blue-600
                      hover:file:bg-blue-100"
             onChange={handleFileChange}
-            disabled={loading}
+            disabled={loading || loadingOcr}
         />
 
         {loading && (
-            <div className="absolute top-4 right-4 flex items-center space-x-2 text-gray-700">
+            <div className="flex items-center space-x-2 text-gray-700">
                 <svg
-                    className="animate-spin h-5 w-5 text-blue-600"
+                    className="animate-spin h-15 w-15 text-blue-600"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
@@ -150,6 +145,32 @@ export default function PdfAssistant() {
                 </svg>
                 <span>Loading...</span>
             </div>
+        )}
+
+        {loadingOcr && (
+          <div className="flex items-center space-x-2 text-gray-700">
+            <svg
+              className="animate-spin h-15 w-15 text-green-600"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              ></path>
+            </svg>
+            <span>Running OCR...</span>
+          </div>
         )}
 
         {error && (
