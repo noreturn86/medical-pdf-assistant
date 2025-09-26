@@ -31,6 +31,7 @@ export default function PdfAssistant() {
         setUserQuestion('');
         setAnswer('');
         setQuestionAsked(false);
+        setError('');
         setLoading(true);
         try {
             if (pdfUrl) {
@@ -121,7 +122,6 @@ export default function PdfAssistant() {
         alert("Limited to 1 question, for demonstration purposes");
         return;
       }
-
       if (!userQuestion?.trim()) {
         alert("Enter a question.");
         return;
@@ -263,18 +263,42 @@ export default function PdfAssistant() {
         </div>
       </div>
 
-      <div className="bg-white shadow rounded-2xl p-6 border border-gray-300 flex flex-col h-[300px]">
+      <div className="bg-white shadow rounded-2xl p-6 border border-gray-300 flex flex-col">
         <h2 className="text-lg font-semibold mb-4">Ask questions about your document</h2>
 
         <div className="flex-1 overflow-y-auto space-y-3 mb-4">
           <div className="flex justify-end">
-            <div className={`px-4 py-2 rounded-2xl max-w-xs bg-blue-600 text-white rounded-br-none ${questionAsked ? "hidden":"visible"}`}>
-              {userQuestion || "User message"}
+            <div className={`px-4 py-2 rounded-2xl max-w-xs bg-blue-600 text-white rounded-br-none`}>
+              {loadingResponse || questionAsked ? userQuestion : "User message"}
             </div>
           </div>
           <div className="flex justify-start">
             <div className="px-4 py-2 rounded-2xl max-w-m bg-gray-200 text-gray-800 rounded-bl-none">
-              {answer || "AI response"}
+              {loadingResponse ? (
+                <div className="flex items-center space-x-2 text-gray-700">
+                  <svg
+                    className="animate-spin h-15 w-15 text-green-600"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
+                  </svg>
+                  <span>Generating response...</span>
+                </div>
+              ) : answer || "AI response"}
             </div>
           </div>
         </div>
@@ -283,22 +307,22 @@ export default function PdfAssistant() {
           <input
             type="text"
             placeholder="Type your question..."
-            className="flex-1 border rounded-xl p-3 focus:ring-2 focus:ring-blue-400"
+            className={`flex-1 border rounded-xl p-3 focus:ring-2 focus:ring-blue-400 ${questionAsked ? "cursor-not-allowed" : "cursor-text"}`}
             onChange={(e) => setUserQuestion(e.target.value)}
             disabled={questionAsked}
           />
           <button
-            className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-500 transition"
+            className={`px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-500 transition ${questionAsked ? "cursor-not-allowed" : "cursor-pointer"}`}
             onClick={handleAskQuestion}
             disabled={questionAsked}
           >
             Send
           </button>
         </div>
+        {questionAsked && (
+          <p className="text-red-500 text-center">Limited to 1 question per document, for demonstration purposes</p>
+        )}
       </div>
-      {questionAsked && (
-        <p className="text-red-500 text-center">Limited to 1 question per document, for demonstration purposes</p>
-      )}
     </div>
   );
 }
