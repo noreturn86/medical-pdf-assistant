@@ -4,12 +4,13 @@
 
 I've been experimenting with a few separate PDF handling and generative AI apps, and now I’m combining the individual components into a single project.
 
-The **final product** will let users:
+This app lets users:
 
-* Upload a **medical document in PDF format**. - complete
-* Have the PDF **summarized by generative AI**. - complete
-* Ask **questions about the document**, which the AI will answer. - in progress
-* Handle PDFs **with or without embedded text**. Scanned documents or photos taken with a mobile camera will be processed using **optical text recognition (OCR)**. - complete
+* Upload a **medical document in PDF format**.
+* Have the PDF **summarized by generative AI**.
+* Ask **questions about the document**, which the AI will answer.
+* Handle PDFs **with or without embedded text**. Scanned documents or photos taken with a mobile camera will be processed using **optical text recognition (OCR)**.
+* Copy **extracted text** to the clipboard.
 
 Think of it as a personal assistant for understanding medical PDFs quickly.
 
@@ -59,12 +60,3 @@ npm run dev
 ```
 
 Now open your browser at `http://localhost:5173` (or the port Vite provides) to see the interface.
-
----
-
-## Goals / Roadmap
-
-* Integrate multiple smaller PDF handling & AI components into one app
-* Add **PDF text extraction** and **OCR** for scanned images
-* Connect with **generative AI** for summarization and Q\&A
-* Make the interface **responsive and user-friendly**

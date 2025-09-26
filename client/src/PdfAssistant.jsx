@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { pdfjs } from 'react-pdf';
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
 import axios from 'axios';
+import { Clipboard } from "lucide-react";
 
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -147,7 +148,7 @@ export default function PdfAssistant() {
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       
 
-      <div className="flex items-center bg-white shadow rounded-2xl p-6 gap-4 border border-gray-300">
+      <div className="flex items-center bg-white shadow rounded-2xl p-6 gap-4 border border-gray-300 relative">
         <h2 className="text-xl font-semibold mb-4">Upload a PDF</h2>
         <input
           type="file"
@@ -217,6 +218,16 @@ export default function PdfAssistant() {
         <div className="mt-4 p-3 rounded-xl bg-red-100 border border-red-300 text-red-700">
             {error}
         </div>
+        )}
+
+        {extractedText && (
+          <button
+            className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition absolute right-4"
+            onClick={() => navigator.clipboard.writeText(extractedText)}
+          >
+            <Clipboard className="w-6 h-6" />
+            <span>Copy extracted text</span>
+          </button>
         )}
 
       </div>
